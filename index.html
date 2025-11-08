@@ -8,11 +8,13 @@
   <body>
     <form id="form" action="#" onsubmit="showContacts(event)">
       <label>Password</label>
-      <input type="password" id="pass" />
+      <input type="password" id="pass" autocomplete="new-password" />
       <button id="submitButton" type="submit">Submit</button>
     </form>
     <pre id="contacts"></pre>
     <script>
+      let timer = null;
+      
       async function showContacts(event) {
         event.preventDefault();
         const pass = document.getElementById('pass').value;
@@ -26,6 +28,10 @@
         } catch (error) {
           document.getElementById('contacts').innerHTML = 'Invalid password';
         }
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => {
+          document.getElementById('contacts').innerHTML = '';
+        }, 20000);
       }
 
       async function aesEncrypt(data, password, difficulty = 10) {

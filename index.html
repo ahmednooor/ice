@@ -15,7 +15,8 @@
     <script>
       async function showContacts(event) {
         event.preventDefault();
-        const pass = document.getElementById('pass').value = '';
+        const pass = document.getElementById('pass').value;
+        document.getElementById('pass').value = '';
         try {
           const decrypted = await aesDecrypt(
             'YOcP3NilfU60+QzZs26ekT/btEIhuv5H1/kYbq8yZHW8pj3AhmA1SzpHqYUc/W3n8DQoVuoa527kFjqVBvmDal/nnrkvAhghcWV7FYxtSpK8/Al/txgs3gYAD/qoL2iAa7BR2XrZWi1yiKXfHqurkro+qnGNL6NnQTiOChGice/zxQW7ukAVxt27NazKBxV5SRSpqle64h69uIdUDbKL86F30pJBJO0lZe3U4cZe16eisgkqByWvl/Dg6itSH7+UsU4N4TIzx9MtqgfGXCDwH9qG7If4N3zDsP1PIOi+SkrKQkSwFX1pMVJztheaxSMG+sUkBrQIX+YawJdex62VVNpI/CopTysAj8ZHJ/I/wXay6z+zgOuzu0s4UHFaxS8=',

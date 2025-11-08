@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Emergency contacts</title>
+  </head>
+  <body>
+    <form id="form" action="#" onsubmit="showContacts(event)">
+      <label>Password</label>
+      <input type="password" id="pass" />
+      <button id="submitButton" type="submit">Submit</button>
+    </form>
+    <pre id="contacts"></pre>
+    <script>
+      async function showContacts(event) {
+        event.preventDefault();
+        const pass = document.getElementById('pass').value = '';
+        try {
+          const decrypted = await aesDecrypt(
+            'YOcP3NilfU60+QzZs26ekT/btEIhuv5H1/kYbq8yZHW8pj3AhmA1SzpHqYUc/W3n8DQoVuoa527kFjqVBvmDal/nnrkvAhghcWV7FYxtSpK8/Al/txgs3gYAD/qoL2iAa7BR2XrZWi1yiKXfHqurkro+qnGNL6NnQTiOChGice/zxQW7ukAVxt27NazKBxV5SRSpqle64h69uIdUDbKL86F30pJBJO0lZe3U4cZe16eisgkqByWvl/Dg6itSH7+UsU4N4TIzx9MtqgfGXCDwH9qG7If4N3zDsP1PIOi+SkrKQkSwFX1pMVJztheaxSMG+sUkBrQIX+YawJdex62VVNpI/CopTysAj8ZHJ/I/wXay6z+zgOuzu0s4UHFaxS8=',
+            pass
+          );
+          document.getElementById('contacts').innerHTML = decrypted;
+        } catch (error) {
+          document.getElementById('contacts').innerHTML = 'Invalid password';
+        }
+      }
+
+      async function aesEncrypt(data, password, difficulty = 10) {
+        const hashKey = await grindKey(password, difficulty);
+        const iv = await getIv(password, data);
+
+        const key = await window.crypto.subtle.importKey(
+          'raw',
+          hashKey,
+          {
+            name: 'AES-GCM',
+          },
+          false,
+          ['encrypt']
+        );
+
+        const encrypted = await window.crypto.subtle.encrypt(
+          {
+            name: 'AES-GCM',
+            iv,
+            tagLength: 128,
+          },
+          key,
+          new TextEncoder('utf-8').encode(data)
+        );
+
+        const result = Array.from(iv).concat(
+          Array.from(new Uint8Array(encrypted))
+        );
+
+        return base64Encode(new Uint8Array(result));
+      }
+
+      async function aesDecrypt(ciphertext, password, difficulty = 10) {
+        const ciphertextBuffer = Array.from(base64Decode(ciphertext));
+        const hashKey = await grindKey(password, difficulty);
+
+        const key = await window.crypto.subtle.importKey(
+          'raw',
+          hashKey,
+          {
+            name: 'AES-GCM',
+          },
+          false,
+          ['decrypt']
+        );
+
+        const decrypted = await window.crypto.subtle.decrypt(
+          {
+            name: 'AES-GCM',
+            iv: new Uint8Array(ciphertextBuffer.slice(0, 12)),
+            tagLength: 128,
+          },
+          key,
+          new Uint8Array(ciphertextBuffer.slice(12))
+        );
+
+        return new TextDecoder('utf-8').decode(new Uint8Array(decrypted));
+      }
+
+      function base64Encode(u8) {
+        return btoa(String.fromCharCode.apply(null, u8));
+      }
+
+      function base64Decode(str) {
+        return new Uint8Array(
+          atob(str)
+            .split('')
+            .map((c) => c.charCodeAt(0))
+        );
+      }
+
+      function grindKey(password, difficulty) {
+        return pbkdf2(
+          password,
+          password + password,
+          Math.pow(2, difficulty),
+          32,
+          'SHA-256'
+        );
+      }
+
+      function getIv(password, data) {
+        const randomData = base64Encode(
+          window.crypto.getRandomValues(new Uint8Array(12))
+        );
+        return pbkdf2(
+          password + randomData,
+          data + new Date().getTime().toString(),
+          1,
+          12,
+          'SHA-256'
+        );
+      }
+
+      async function pbkdf2(message, salt, iterations, keyLen, algorithm) {
+        const msgBuffer = new TextEncoder('utf-8').encode(message);
+        const msgUint8Array = new Uint8Array(msgBuffer);
+        const saltBuffer = new TextEncoder('utf-8').encode(salt);
+        const saltUint8Array = new Uint8Array(saltBuffer);
+
+        const key = await crypto.subtle.importKey(
+          'raw',
+          msgUint8Array,
+          {
+            name: 'PBKDF2',
+          },
+          false,
+          ['deriveBits']
+        );
+
+        const buffer = await crypto.subtle.deriveBits(
+          {
+            name: 'PBKDF2',
+            salt: saltUint8Array,
+            iterations: iterations,
+            hash: algorithm,
+          },
+          key,
+          keyLen * 8
+        );
+
+        return new Uint8Array(buffer);
+      }
+    </script>
+  </body>
+</html>
